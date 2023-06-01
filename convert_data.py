@@ -39,6 +39,9 @@ LABEL_NAME_TALE_OF_KIEU_1866 = os.environ['_LABEL_NAME_TALE_OF_KIEU_1866']
 CONFIDENCE_NAME_TALE_OF_KIEU_1866 = os.environ['_CONFIDENCE_NAME_TALE_OF_KIEU_1866']
 CONFIDENCE_THRESHOLD = float(os.environ['_CONFIDENCE_THRESHOLD'])
 
+WIDTH_SCALED = int(os.environ['_WIDTH_SCALED'])
+HEIGHT_SCALED = int(os.environ['_HEIGHT_SCALED'])
+
 
 def load_labels(label_paths):
     """ Loads labels from excel files
@@ -117,6 +120,20 @@ def split_image(image, left, top, right, bottom):
     return crop
 
 
+def resize_character(character, size):
+    """ Resizes a character image to a fixed size.
+    
+    Args:
+        character (Tensor): character image
+        size (tuple): desired size
+    Returns:
+        a Tensor containing resized character image
+    """
+
+    resized = cv2.resize(character, size, interpolation=cv2.INTER_LINEAR)
+    return resized
+
+
 def get_characters_from_image(image_path, df_labels):
     """ Gets the character images and their associated labels from an image.
     
@@ -127,11 +144,14 @@ def get_characters_from_image(image_path, df_labels):
         a 2-value tuple containing character images and their associated labels
     """
 
+    # Load image
     image = load_image(image_path)
     
+    # Get character bounding box information for this image
     file_name = os.path.basename(image_path).split('.')[0]
     df_img = df_labels[df_labels['FILE_NAME'] == file_name]
-
+    
+    # Split image into character images
     func = lambda x: split_image(
         image, 
         x[LEFT_COOR_NAME], 
@@ -140,7 +160,12 @@ def get_characters_from_image(image_path, df_labels):
         x[BOTTOM_COOR_NAME]
     )
     character_images = df_img.apply(func, axis=1)
+
+    # Resize character images
+    func = lambda x: resize_character(x, (WIDTH_SCALED, HEIGHT_SCALED))
+    character_images = list(map(func, character_images))
     
+    # Get labels
     labels = df_img[LABEL_NAME]
 
     return tuple(zip(character_images, labels))
@@ -156,6 +181,7 @@ def get_characters(image_paths, df_labels):
         a list of characters and their associated labels
     """
     
+    # Get characters from each image
     func = lambda path: get_characters_from_image(path, df_labels)
     characters = list(map(func, image_paths))
 
