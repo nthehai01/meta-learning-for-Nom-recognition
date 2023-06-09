@@ -2,7 +2,7 @@
 # This file contains the code to convert the data                           #
 # from the original format to the format used by the model.                 #
 #                                                                           #
-# A converted dataset for a literature work contains                        #
+# A converted dataset for all literature works contains                     #
 # the following folders/files:                                              #
 #   - character<character_id>: contains all images of this character_id,    #
 #   - meta_data.yaml: contains:                                             #
@@ -21,19 +21,17 @@ import itertools
 
 LUC_VAN_TIEN_IMAGES_PATH = os.environ['_LUC_VAN_TIEN_IMAGES_PATH']
 LUC_VAN_TIEN_LABELS_PATH = os.environ['_LUC_VAN_TIEN_LABELS_PATH']
-PROC_LUC_VAN_TIEN_PATH = os.environ['_PROC_LUC_VAN_TIEN_PATH']
 
 TALE_OF_KIEU_1866_IMAGES_PATH = os.environ['_TALE_OF_KIEU_1866_IMAGES_PATH']
 TALE_OF_KIEU_1866_LABELS_PATH = os.environ['_TALE_OF_KIEU_1866_LABELS_PATH']
-PROC_TALE_OF_KIEU_1866_PATH = os.environ['_PROC_TALE_OF_KIEU_1866_PATH']
 
 TALE_OF_KIEU_1871_IMAGES_PATH = os.environ['_TALE_OF_KIEU_1871_IMAGES_PATH']
 TALE_OF_KIEU_1871_LABELS_PATH = os.environ['_TALE_OF_KIEU_1871_LABELS_PATH']
-PROC_TALE_OF_KIEU_1871_PATH = os.environ['_PROC_TALE_OF_KIEU_1871_PATH']
 
 TALE_OF_KIEU_1902_IMAGES_PATH = os.environ['_TALE_OF_KIEU_1902_IMAGES_PATH']
 TALE_OF_KIEU_1902_LABELS_PATH = os.environ['_TALE_OF_KIEU_1902_LABELS_PATH']
-PROC_TALE_OF_KIEU_1902_PATH = os.environ['_PROC_TALE_OF_KIEU_1902_PATH']
+
+PROC_PATH = os.environ['_PROC_PATH']
 
 LEFT_COOR_NAME = os.environ['_LEFT_COOR_NAME']
 TOP_COOR_NAME = os.environ['_TOP_COOR_NAME']
@@ -55,6 +53,28 @@ RAW_IMAGE_FILE_EXTENSION = os.environ['_RAW_IMAGE_FILE_EXTENSION']
 RAW_LABEL_FILE_EXTENSION = os.environ['_RAW_LABEL_FILE_EXTENSION']
 META_DATA_FILE_NAME = os.environ['_META_DATA_FILE_NAME']
 
+FILE_NAME_COLUMN = "FILE_NAME"
+
+
+def get_raw_path(file_extension, *argv):
+    """ Gets all raw images/labels file paths from all literature works.
+    
+    Args:
+        file_extension (str): desired file's extension
+        *argv (str): list of paths
+    Returns:
+        raw_paths (list): list of all raw images/labels file paths
+    """
+    
+    raw_paths = []
+    for arg in argv:
+        paths = glob.glob(
+            os.path.join(arg, f'*.{file_extension}')
+        )
+        raw_paths.extend(paths)
+
+    return raw_paths
+
 
 def load_labels(label_paths):
     """ Loads labels from excel files
@@ -65,27 +85,44 @@ def load_labels(label_paths):
         df_labels (DataFrame): dataframe containing labels
     """
 
+    accepted_columns = [
+        LEFT_COOR_NAME, 
+        TOP_COOR_NAME, 
+        RIGHT_COOR_NAME, 
+        BOTTOM_COOR_NAME, 
+        LABEL_NAME,
+        FILE_NAME_COLUMN
+    ]
+
     df_labels = pd.DataFrame()
 
     for label_path in label_paths:
+        # Load label file
         df_img = pd.read_excel(label_path)
-        df_img['FILE_NAME'] = os.path.basename(label_path).split('.')[0]
+
+        # Add file name column
+        df_img[FILE_NAME_COLUMN] = os.path.basename(label_path).split('.')[0]
+
+        # Process for Tale of Kieu 1866 only
+        if LABEL_NAME_TALE_OF_KIEU_1866 in df_img.columns:
+            df_img = df_img[
+                df_img[CONFIDENCE_NAME_TALE_OF_KIEU_1866] >= CONFIDENCE_THRESHOLD
+            ]
+            df_img.rename(
+                columns = {LABEL_NAME_TALE_OF_KIEU_1866: LABEL_NAME}, 
+                inplace = True
+            )
+
+        # Remove unused columns
+        df_img = df_img[accepted_columns]
+
         df_labels = pd.concat([df_labels, df_img])
 
     df_labels.reset_index(inplace=True)
     df_labels.drop(columns=['index'], inplace=True)
-
-    # Process for Tale of Kieu 1866 only
-    if LABEL_NAME_TALE_OF_KIEU_1866 in df_labels.columns:
-        df_labels = df_labels[
-            df_labels[CONFIDENCE_NAME_TALE_OF_KIEU_1866] >= CONFIDENCE_THRESHOLD
-        ]
-        df_labels.rename(
-            columns = {LABEL_NAME_TALE_OF_KIEU_1866: LABEL_NAME}, 
-            inplace = True
-        )
     
     return df_labels
+
 
 def unicode_to_nom(unicode):
     """ Convert unicode to Nôm text
@@ -206,7 +243,7 @@ def get_characters_from_image(image_path, df_labels):
     
     # Get character bounding box information for this image
     file_name = os.path.basename(image_path).split('.')[0]
-    df_img = df_labels[df_labels['FILE_NAME'] == file_name]
+    df_img = df_labels[df_labels[FILE_NAME_COLUMN] == file_name]
     
     # Split image into character images
     func = lambda x: split_image(
@@ -248,6 +285,32 @@ def get_characters(image_paths, df_labels):
     return characters
 
 
+def save_meta_data(unique_characters, output_file):
+    """ Saves meta data to output file.
+    
+    Args:
+        unique_characters (list): list of unique characters
+        output_file (str): output file path
+    """
+
+    n_classes = len(unique_characters)
+
+    with open(output_file, 'w') as f:
+        # Write number of classes
+        f.write("n_classes: " + str(n_classes) + '\n\n')
+
+        # Write classes
+        f.write("unicode_classes: [")
+        for i, character in enumerate(unique_characters):
+            if i == 0:
+                f.write(character)
+            else:
+                f.write(", " + character)
+        f.write("]")
+
+        f.close()
+
+
 def save_character(character, label, output_dir, character_list):
     """Saves a character to output directory.
     
@@ -285,103 +348,35 @@ def save_characters(characters, output_dir, character_list):
     _ = list(map(func, characters))
 
 
-def save_meta_data(unique_characters, output_file):
-    """ Saves meta data to output file.
-    
-    Args:
-        unique_characters (list): list of unique characters
-        output_file (str): output file path
-    """
+def main():
+    image_paths = get_raw_path(
+        RAW_IMAGE_FILE_EXTENSION,
+        LUC_VAN_TIEN_IMAGES_PATH,
+        TALE_OF_KIEU_1866_IMAGES_PATH,
+        TALE_OF_KIEU_1871_IMAGES_PATH,
+        TALE_OF_KIEU_1902_IMAGES_PATH
+    )
+    label_paths = get_raw_path(
+        RAW_LABEL_FILE_EXTENSION,
+        LUC_VAN_TIEN_LABELS_PATH,
+        TALE_OF_KIEU_1866_LABELS_PATH,
+        TALE_OF_KIEU_1871_LABELS_PATH,
+        TALE_OF_KIEU_1902_LABELS_PATH
+    )
 
-    n_classes = len(unique_characters)
-
-    with open(output_file, 'w') as f:
-        # Write number of classes
-        f.write("n_classes: " + str(n_classes) + '\n\n')
-
-        # Write classes
-        f.write("unicode_classes: [")
-        for i, character in enumerate(unique_characters):
-            if i == 0:
-                f.write(character)
-            else:
-                f.write(", " + character)
-        f.write("]")
-
-        f.close()
-
-
-def process_data(image_paths, label_paths, output_dir):
-    """ For a specific literature work, creates a folder containing all characters.
-    
-    Args:
-        image_paths (list): list of image file paths
-        label_paths (list): list of label file paths
-        output_dir (str): output directory
-    """
-    
     df_labels = load_labels(label_paths)
-
     df_labels = remove_invalid_characters(df_labels)
-    
+
     characters = get_characters(image_paths, df_labels)
-    
+
     unique_characters = np.unique(df_labels[LABEL_NAME])
     unique_characters = np.sort(unique_characters)
-    
-    meta_file = os.path.join(output_dir, META_DATA_FILE_NAME)
+
+    meta_file = os.path.join(PROC_PATH, META_DATA_FILE_NAME)
     save_meta_data(unique_characters, meta_file)
 
-    save_characters(characters, output_dir, unique_characters)
+    save_characters(characters, PROC_PATH, unique_characters)
 
 
-def process_literature_work(raw_images_dir, raw_labels_dir, output_dir):
-    """ Processes for a specific literature work.
-    
-    Args:
-        raw_images_path (str): path to raw images directory
-        raw_labels_path (str): path to raw labels directory
-        output_dir (str): output directory
-    """
-    
-    image_paths = glob.glob(
-        os.path.join(raw_images_dir, f'*.{RAW_IMAGE_FILE_EXTENSION}')
-    )
-    label_paths = glob.glob(
-        os.path.join(raw_labels_dir, f'*.{RAW_LABEL_FILE_EXTENSION}')
-    )
-    process_data(image_paths, label_paths, output_dir)
-
-
-if __name__ == '__main__':
-    # Luc Van Tien
-    print("Processing Luc Van Tien...")
-    process_literature_work(
-        LUC_VAN_TIEN_IMAGES_PATH, 
-        LUC_VAN_TIEN_LABELS_PATH, 
-        PROC_LUC_VAN_TIEN_PATH
-    )
-
-    # Tale of Kieu 1866
-    print("Processing Tale of Kieu 1866...")
-    process_literature_work(
-        TALE_OF_KIEU_1866_IMAGES_PATH, 
-        TALE_OF_KIEU_1866_LABELS_PATH, 
-        PROC_TALE_OF_KIEU_1866_PATH
-    )
-
-    # Tale of Kieu 1871
-    print("Processing Tale of Kieu 1871...")
-    process_literature_work(
-        TALE_OF_KIEU_1871_IMAGES_PATH, 
-        TALE_OF_KIEU_1871_LABELS_PATH, 
-        PROC_TALE_OF_KIEU_1871_PATH
-    )
-
-    # Tale of Kieu 1902
-    print("Processing Tale of Kieu 1902...")
-    process_literature_work(
-        TALE_OF_KIEU_1902_IMAGES_PATH, 
-        TALE_OF_KIEU_1902_LABELS_PATH, 
-        PROC_TALE_OF_KIEU_1902_PATH
-    )
+if __name__ == "__main__":
+    main()

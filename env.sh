@@ -1,9 +1,5 @@
 export _BASE_PATH="RawDataset"
-export _PROC_PATH="ProcessedDataset"
-export _PROC_LUC_VAN_TIEN_PATH="$_PROC_PATH/LucVanTien"
-export _PROC_TALE_OF_KIEU_1866_PATH="$_PROC_PATH/TaleOfKieu1866"
-export _PROC_TALE_OF_KIEU_1871_PATH="$_PROC_PATH/TaleOfKieu1871"
-export _PROC_TALE_OF_KIEU_1902_PATH="$_PROC_PATH/TaleOfKieu1902"
+export _PROC_PATH="NomCharacters"
 export _LUC_VAN_TIEN_IMAGES_PATH="$_BASE_PATH/Luc Van Tien/lvt-raw-images"
 export _LUC_VAN_TIEN_LABELS_PATH="$_BASE_PATH/Luc Van Tien/lvt-mynom"
 export _TALE_OF_KIEU_1866_IMAGES_PATH="$_BASE_PATH/Tale of Kieu/1866-raw-images"
@@ -31,10 +27,6 @@ export _META_DATA_FILE_NAME="meta_data.yaml"
 clearenv () {
     unset _BASE_PATH
     unset _PROC_PATH
-    unset _PROC_LUC_VAN_TIEN_PATH
-    unset _PROC_TALE_OF_KIEU_1866_PATH
-    unset _PROC_TALE_OF_KIEU_1871_PATH
-    unset _PROC_TALE_OF_KIEU_1902_PATH
     unset _LUC_VAN_TIEN_IMAGES_PATH
     unset _LUC_VAN_TIEN_LABELS_PATH
     unset _TALE_OF_KIEU_1866_IMAGES_PATH
