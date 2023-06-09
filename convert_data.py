@@ -19,39 +19,42 @@ import cv2
 import itertools
 
 
-LUC_VAN_TIEN_IMAGES_PATH = os.environ['_LUC_VAN_TIEN_IMAGES_PATH']
-LUC_VAN_TIEN_LABELS_PATH = os.environ['_LUC_VAN_TIEN_LABELS_PATH']
-
-TALE_OF_KIEU_1866_IMAGES_PATH = os.environ['_TALE_OF_KIEU_1866_IMAGES_PATH']
-TALE_OF_KIEU_1866_LABELS_PATH = os.environ['_TALE_OF_KIEU_1866_LABELS_PATH']
-
-TALE_OF_KIEU_1871_IMAGES_PATH = os.environ['_TALE_OF_KIEU_1871_IMAGES_PATH']
-TALE_OF_KIEU_1871_LABELS_PATH = os.environ['_TALE_OF_KIEU_1871_LABELS_PATH']
-
-TALE_OF_KIEU_1902_IMAGES_PATH = os.environ['_TALE_OF_KIEU_1902_IMAGES_PATH']
-TALE_OF_KIEU_1902_LABELS_PATH = os.environ['_TALE_OF_KIEU_1902_LABELS_PATH']
+RAW_DATA_PATH = os.environ['_BASE_PATH']
 
 PROC_PATH = os.environ['_PROC_PATH']
 
-LEFT_COOR_NAME = os.environ['_LEFT_COOR_NAME']
-TOP_COOR_NAME = os.environ['_TOP_COOR_NAME']
-RIGHT_COOR_NAME = os.environ['_RIGHT_COOR_NAME']
-BOTTOM_COOR_NAME = os.environ['_BOTTOM_COOR_NAME']
-
-LABEL_NAME = os.environ['_LABEL_NAME']
-UNKNOWN_CHARACTER = os.environ['_UNKNOWN_CHARACTER']
-
-LABEL_NAME_TALE_OF_KIEU_1866 = os.environ['_LABEL_NAME_TALE_OF_KIEU_1866']
-CONFIDENCE_NAME_TALE_OF_KIEU_1866 = os.environ['_CONFIDENCE_NAME_TALE_OF_KIEU_1866']
-CONFIDENCE_THRESHOLD = float(os.environ['_CONFIDENCE_THRESHOLD'])
-
-WIDTH_SCALED = int(os.environ['_WIDTH_SCALED'])
-HEIGHT_SCALED = int(os.environ['_HEIGHT_SCALED'])
-
 CHARACTER_FILE_EXTENSION = os.environ['_CHARACTER_FILE_EXTENSION']
-RAW_IMAGE_FILE_EXTENSION = os.environ['_RAW_IMAGE_FILE_EXTENSION']
-RAW_LABEL_FILE_EXTENSION = os.environ['_RAW_LABEL_FILE_EXTENSION']
 META_DATA_FILE_NAME = os.environ['_META_DATA_FILE_NAME']
+
+CHARACTER_WIDTH_SCALED = int(os.environ['_CHARACTER_WIDTH_SCALED'])
+CHARACTER_HEIGHT_SCALED = int(os.environ['_CHARACTER_HEIGHT_SCALED'])
+
+LUC_VAN_TIEN_IMAGES_PATH = os.path.join(RAW_DATA_PATH, "Luc Van Tien/lvt-raw-images")
+LUC_VAN_TIEN_LABELS_PATH = os.path.join(RAW_DATA_PATH, "Luc Van Tien/lvt-mynom")
+
+TALE_OF_KIEU_1866_IMAGES_PATH = os.path.join(RAW_DATA_PATH, "Tale of Kieu/1866-raw-images")
+TALE_OF_KIEU_1866_LABELS_PATH = os.path.join(RAW_DATA_PATH, "Tale of Kieu/1866-mynom")
+
+TALE_OF_KIEU_1871_IMAGES_PATH = os.path.join(RAW_DATA_PATH, "Tale of Kieu/1871-raw-images")
+TALE_OF_KIEU_1871_LABELS_PATH = os.path.join(RAW_DATA_PATH, "Tale of Kieu/1871-mynom")
+
+TALE_OF_KIEU_1902_IMAGES_PATH = os.path.join(RAW_DATA_PATH, "Tale of Kieu/1902-raw-images")
+TALE_OF_KIEU_1902_LABELS_PATH = os.path.join(RAW_DATA_PATH, "Tale of Kieu/1902-mynom")
+
+LEFT_COOR_NAME = "LEFT"
+TOP_COOR_NAME = "TOP"
+RIGHT_COOR_NAME = "RIGHT"
+BOTTOM_COOR_NAME = "BOTTOM"
+
+LABEL_NAME = "UNICODE"
+UNKNOWN_CHARACTER = "UNK"
+
+LABEL_NAME_TALE_OF_KIEU_1866 = "UNICODE1"
+CONFIDENCE_NAME_TALE_OF_KIEU_1866 = "CONFIDENCE1"
+CONFIDENCE_THRESHOLD = 0.9
+
+RAW_IMAGE_FILE_EXTENSION = "jpg"
+RAW_LABEL_FILE_EXTENSION = "xlsx"
 
 FILE_NAME_COLUMN = "FILE_NAME"
 
@@ -256,7 +259,7 @@ def get_characters_from_image(image_path, df_labels):
     character_images = df_img.apply(func, axis=1)
 
     # Resize character images
-    func = lambda x: resize_character(x, (WIDTH_SCALED, HEIGHT_SCALED))
+    func = lambda x: resize_character(x, (CHARACTER_WIDTH_SCALED, CHARACTER_HEIGHT_SCALED))
     character_images = list(map(func, character_images))
     
     # Get labels
