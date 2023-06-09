@@ -23,6 +23,10 @@ export _CONFIDENCE_NAME_TALE_OF_KIEU_1866="CONFIDENCE1"
 export _CONFIDENCE_THRESHOLD=0.9
 export _WIDTH_SCALED=44
 export _HEIGHT_SCALED=44
+export _CHARACTER_FILE_EXTENSION="png"
+export _RAW_IMAGE_FILE_EXTENSION="jpg"
+export _RAW_LABEL_FILE_EXTENSION="xlsx"
+export _META_DATA_FILE_NAME="meta_data.yaml"
 
 clearenv () {
     unset _BASE_PATH
@@ -50,4 +54,8 @@ clearenv () {
     unset _CONFIDENCE_THRESHOLD
     unset _WIDTH_SCALED
     unset _HEIGHT_SCALED
+    unset _CHARACTER_FILE_EXTENSION
+    unset _RAW_IMAGE_FILE_EXTENSION
+    unset _RAW_LABEL_FILE_EXTENSION
+    unset _META_DATA_FILE_NAME
 }

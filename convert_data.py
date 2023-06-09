@@ -1,7 +1,15 @@
-#############################################################
-# This file contains the code to convert the data           #
-# from the original format to the format used by the model. #
-#############################################################
+#############################################################################
+# This file contains the code to convert the data                           #
+# from the original format to the format used by the model.                 #
+#                                                                           #
+# A converted dataset for a literature work contains                        #
+# the following folders/files:                                              #
+#   - character<character_id>: contains all images of this character_id,    #
+#   - meta_data.yaml: contains:                                             #
+#       - n_classes: number of unique characters in this literature work.   #
+#       - unicode_classes: a list of characters in form of unicode,         #
+#                          the character_id of a class is its index number. #
+#############################################################################
 
 import os
 import glob
@@ -42,6 +50,11 @@ CONFIDENCE_THRESHOLD = float(os.environ['_CONFIDENCE_THRESHOLD'])
 WIDTH_SCALED = int(os.environ['_WIDTH_SCALED'])
 HEIGHT_SCALED = int(os.environ['_HEIGHT_SCALED'])
 
+CHARACTER_FILE_EXTENSION = os.environ['_CHARACTER_FILE_EXTENSION']
+RAW_IMAGE_FILE_EXTENSION = os.environ['_RAW_IMAGE_FILE_EXTENSION']
+RAW_LABEL_FILE_EXTENSION = os.environ['_RAW_LABEL_FILE_EXTENSION']
+META_DATA_FILE_NAME = os.environ['_META_DATA_FILE_NAME']
+
 
 def load_labels(label_paths):
     """ Loads labels from excel files
@@ -49,7 +62,7 @@ def load_labels(label_paths):
     Args:
         label_paths (list): list of paths to label files
     Returns:
-        df_labels (DataFrame): dataframe containing images and labels
+        df_labels (DataFrame): dataframe containing labels
     """
 
     df_labels = pd.DataFrame()
@@ -62,7 +75,7 @@ def load_labels(label_paths):
     df_labels.reset_index(inplace=True)
     df_labels.drop(columns=['index'], inplace=True)
 
-    # Process for Tale of Kieu 1866
+    # Process for Tale of Kieu 1866 only
     if LABEL_NAME_TALE_OF_KIEU_1866 in df_labels.columns:
         df_labels = df_labels[
             df_labels[CONFIDENCE_NAME_TALE_OF_KIEU_1866] >= CONFIDENCE_THRESHOLD
@@ -74,17 +87,61 @@ def load_labels(label_paths):
     
     return df_labels
 
+def unicode_to_nom(unicode):
+    """ Convert unicode to Nôm text
+
+    Args:
+        unicode (str): unicode of a character
+    """
+
+    return chr(int(unicode, 16))
+
 
 def remove_unknown_characters(df_labels):
     """ Removes unknown characters from labels.
 
     Args:
-        df_labels (DataFrame): dataframe containing images and labels
+        df_labels (DataFrame): dataframe containing labels
     Returns:
         res (DataFrame): dataframe after removing unknown characters
     """
 
+    # Remove unknown characters
     res = df_labels[df_labels[LABEL_NAME] != UNKNOWN_CHARACTER]
+
+    return res
+
+
+def remove_invalid_unicode(df_labels):
+    """ Removes invalid unicode from labels.
+
+    Args:
+        df_labels (DataFrame): dataframe containing labels
+    Returns:
+        res (DataFrame): dataframe after removing invalid unicode
+    """
+
+    unicode_checker = lambda x: unicode_to_nom(x).isalpha()
+    res = df_labels[df_labels[LABEL_NAME].apply(unicode_checker)]
+
+    return res
+
+
+def remove_invalid_characters(df_labels):
+    """ Removes invalid characters from labels.
+        The cases that a character is invalid:
+            - The character is unknown.
+            - The unicode of the character is invalid.
+
+    Args:
+        df_labels (DataFrame): dataframe containing labels
+    Returns:
+        res (DataFrame): dataframe after removing unknown characters
+    """
+
+    res = remove_unknown_characters(df_labels)
+    res = remove_invalid_unicode(res)
+
     return res
 
 
@@ -172,7 +229,7 @@ def get_characters_from_image(image_path, df_labels):
 
 
 def get_characters(image_paths, df_labels):
-    """ Get all characters from all images.
+    """ Gets all characters from all images.
     
     Args:
         image_paths (list): list of image file paths
@@ -192,7 +249,7 @@ def get_characters(image_paths, df_labels):
 
 
 def save_character(character, label, output_dir, character_list):
-    """Save a character to output directory.
+    """Saves a character to output directory.
     
     Args:
         character (Tensor): character image
@@ -210,13 +267,13 @@ def save_character(character, label, output_dir, character_list):
 
     # Save character image
     n_files_exist = len(os.listdir(label_folder_path))
-    file_name = str(n_files_exist + 1).zfill(4) + ".png"
+    file_name = str(n_files_exist + 1).zfill(4) + "." + CHARACTER_FILE_EXTENSION
     file_path = os.path.join(label_folder_path, file_name)
     cv2.imwrite(file_path, character)
 
 
 def save_characters(characters, output_dir, character_list):
-    """ Save characters to output directory.
+    """ Saves characters to output directory.
     
     Args:
         characters (list): list of characters and their associated labels
@@ -229,7 +286,7 @@ def save_characters(characters, output_dir, character_list):
 
 
 def save_meta_data(unique_characters, output_file):
-    """ Save meta data to output file.
+    """ Saves meta data to output file.
     
     Args:
         unique_characters (list): list of unique characters
@@ -243,19 +300,19 @@ def save_meta_data(unique_characters, output_file):
         f.write("n_classes: " + str(n_classes) + '\n\n')
 
         # Write classes
-        f.write("classes: [")
+        f.write("unicode_classes: [")
         for i, character in enumerate(unique_characters):
             if i == 0:
-                f.write("'" + character + "'")
+                f.write(character)
             else:
-                f.write(", '" + character + "'")
+                f.write(", " + character)
         f.write("]")
 
         f.close()
 
 
 def process_data(image_paths, label_paths, output_dir):
-    """ For a specific literature work, create a folder containing all characters.
+    """ For a specific literature work, creates a folder containing all characters.
     
     Args:
         image_paths (list): list of image file paths
@@ -265,40 +322,66 @@ def process_data(image_paths, label_paths, output_dir):
     
     df_labels = load_labels(label_paths)
 
-    df_labels = remove_unknown_characters(df_labels)
+    df_labels = remove_invalid_characters(df_labels)
     
     characters = get_characters(image_paths, df_labels)
     
     unique_characters = np.unique(df_labels[LABEL_NAME])
     unique_characters = np.sort(unique_characters)
     
-    meta_file = os.path.join(output_dir, "meta.txt")
+    meta_file = os.path.join(output_dir, META_DATA_FILE_NAME)
     save_meta_data(unique_characters, meta_file)
 
     save_characters(characters, output_dir, unique_characters)
 
 
+def process_literature_work(raw_images_dir, raw_labels_dir, output_dir):
+    """ Processes for a specific literature work.
+    
+    Args:
+        raw_images_path (str): path to raw images directory
+        raw_labels_path (str): path to raw labels directory
+        output_dir (str): output directory
+    """
+    
+    image_paths = glob.glob(
+        os.path.join(raw_images_dir, f'*.{RAW_IMAGE_FILE_EXTENSION}')
+    )
+    label_paths = glob.glob(
+        os.path.join(raw_labels_dir, f'*.{RAW_LABEL_FILE_EXTENSION}')
+    )
+    process_data(image_paths, label_paths, output_dir)
+
+
 if __name__ == '__main__':
     # Luc Van Tien
     print("Processing Luc Van Tien...")
-    image_paths = glob.glob(os.path.join(LUC_VAN_TIEN_IMAGES_PATH, '*.jpg'))
-    label_paths = glob.glob(os.path.join(LUC_VAN_TIEN_LABELS_PATH, '*.xlsx'))
-    process_data(image_paths, label_paths, PROC_LUC_VAN_TIEN_PATH)
+    process_literature_work(
+        LUC_VAN_TIEN_IMAGES_PATH, 
+        LUC_VAN_TIEN_LABELS_PATH, 
+        PROC_LUC_VAN_TIEN_PATH
+    )
 
     # Tale of Kieu 1866
     print("Processing Tale of Kieu 1866...")
-    image_paths = glob.glob(os.path.join(TALE_OF_KIEU_1866_IMAGES_PATH, '*.jpg'))
-    label_paths = glob.glob(os.path.join(TALE_OF_KIEU_1866_LABELS_PATH, '*.xlsx'))
-    process_data(image_paths, label_paths, PROC_TALE_OF_KIEU_1866_PATH)
+    process_literature_work(
+        TALE_OF_KIEU_1866_IMAGES_PATH, 
+        TALE_OF_KIEU_1866_LABELS_PATH, 
+        PROC_TALE_OF_KIEU_1866_PATH
+    )
 
     # Tale of Kieu 1871
     print("Processing Tale of Kieu 1871...")
-    image_paths = glob.glob(os.path.join(TALE_OF_KIEU_1871_IMAGES_PATH, '*.jpg'))
-    label_paths = glob.glob(os.path.join(TALE_OF_KIEU_1871_LABELS_PATH, '*.xlsx'))
-    process_data(image_paths, label_paths, PROC_TALE_OF_KIEU_1871_PATH)
+    process_literature_work(
+        TALE_OF_KIEU_1871_IMAGES_PATH, 
+        TALE_OF_KIEU_1871_LABELS_PATH, 
+        PROC_TALE_OF_KIEU_1871_PATH
+    )
 
     # Tale of Kieu 1902
     print("Processing Tale of Kieu 1902...")
-    image_paths = glob.glob(os.path.join(TALE_OF_KIEU_1902_IMAGES_PATH, '*.jpg'))
-    label_paths = glob.glob(os.path.join(TALE_OF_KIEU_1902_LABELS_PATH, '*.xlsx'))
-    process_data(image_paths, label_paths, PROC_TALE_OF_KIEU_1902_PATH)
+    process_literature_work(
+        TALE_OF_KIEU_1902_IMAGES_PATH, 
+        TALE_OF_KIEU_1902_LABELS_PATH, 
+        PROC_TALE_OF_KIEU_1902_PATH
+    )
