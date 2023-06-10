@@ -12,6 +12,12 @@
 # or pre-training set for transfer learning.                                            #
 # The smaller set is set to be the meta-testing for meta-learning or                    #
 # fine-tuning set for transfer learning.                                                #               
+#                                                                                       #
+# For each pre-training or fine-tuning set, we split it into train, val, and test sets  #
+# by using splitfolders package. After that, we need to find and move all the files     #
+# that are augmented character images back to the train set and move 1 image file that  #
+# are unaugmented to the test set (since there are only one unaugmented files for some  #
+# characters).                                                                          #
 #########################################################################################
 
 import os
