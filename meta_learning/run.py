@@ -14,6 +14,7 @@ sys.path.append(parent)
 
 import argparse
 from torch.utils import tensorboard
+import numpy as np
 
 from meta_learning.methods.protonet import ProtoNet
 from meta_learning.methods.maml import MAML
@@ -142,7 +143,13 @@ def determine_algorithm(args, log_dir):
             log_dir
         )
     elif args.method == 'maml':
-        net = MAML()
+        net = MAML(
+            args.output_dim, 
+            args.num_inner_steps, 
+            args.inner_lr, 
+            args.outer_lr, 
+            log_dir
+        )
     elif args.method == 'protomaml':
         net = ProtoMAML()
     else:
@@ -164,7 +171,7 @@ def main():
         if args.method == 'protonet':
             log_dir = f'./logs/{args.method}/nom_meta.way:{args.num_way}.shot:{args.num_shot}.query:{args.num_query}.batch_size:{args.batch_size}.lr:{args.lr}'
         else:  # maml or protomaml
-            log_dir = f'./logs/{args.method}/nom_meta.way:{args.num_way}.shot:{args.num_shot}.query:{args.num_query}.batch_size:{args.batch_size}.inner_steps:{args.num_inner_steps}.inner_lr:{args.inner_lr}.learn_inner_lrs:{args.learn_inner_lrs}.outer_lr:{args.outer_lr}'
+            log_dir = f'./logs/{args.method}/nom_meta.way:{args.num_way}.shot:{args.num_shot}.query:{args.num_query}.batch_size:{args.batch_size}.inner_steps:{args.num_inner_steps}.inner_lr:{args.inner_lr}.outer_lr:{args.outer_lr}'
     print(f'log_dir: {log_dir}')
     writer = tensorboard.SummaryWriter(log_dir=log_dir)
 
@@ -222,7 +229,18 @@ def main():
             NUM_TEST_TASKS
         )
 
-        net.test(dataloader_test)
+        # Perform testing
+        _, _, accuracies_query = net.test(dataloader_test)
+
+        # Compute statistics
+        mean = np.mean(accuracies_query)
+        std = np.std(accuracies_query)
+        mean_95_confidence_interval = 1.96 * std / np.sqrt(NUM_TEST_TASKS)
+        print(
+            f'Accuracy over {NUM_TEST_TASKS} test tasks: '
+            f'mean {mean:.3f}, '
+            f'95% confidence interval {mean_95_confidence_interval:.3f}'
+        )
 
 
 if __name__ == '__main__':

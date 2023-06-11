@@ -33,7 +33,7 @@ class ProtoNet:
         Args:
             output_dim (int): dimensionality of output space
             learning_rate (float): learning rate for training
-            log_dir (str): directory to save model checkpoints
+            log_dir (str): directory to save or load model checkpoints
         """
 
         self._network = Backbone.get_network(num_outputs=output_dim, device=DEVICE)
@@ -113,15 +113,15 @@ class ProtoNet:
         
         Args:
             images (torch.Tensor): images to classify
-                shape (n, feat_dim)
+                shape (n, c, h, w)
             labels (torch.Tensor): query labels
                 shape (n,)
             prototypes (torch.Tensor): class prototypes
                 shape (num_way, feat_dim)
         Returns:
-            losses (torch.Tensor): mean cross-entropy loss over query set
+            loss (torch.Tensor): mean cross-entropy loss over query set
                 shape ()
-            accuracies (torch.Tensor): classification accuracy on query set
+            accuracy (torch.Tensor): mean classification accuracy on query set
                 shape ()
         """
 
@@ -132,13 +132,13 @@ class ProtoNet:
         # Make predictions
         preds = F.log_softmax(-distances, dim=1)
 
-        # Compute classification losses
-        losses = F.cross_entropy(preds, labels)
+        # Compute classification loss
+        loss = F.cross_entropy(preds, labels)
 
-        # Compute accuracies
-        accuracies = score(preds, labels)
+        # Compute accuracy
+        accuracy = score(preds, labels)
 
-        return losses, accuracies
+        return loss, accuracy
     
 
     def _step(self, task_batch):
@@ -172,33 +172,33 @@ class ProtoNet:
             prototypes = self.compute_prototypes(features_support, labels_support)
 
             # Compute accuracy on support set
-            _, accuracies_support = self._classify_feats(
+            _, accuracy_support = self._classify_feats(
                 images_support, 
                 labels_support, 
                 prototypes
             )
 
             # Compute loss and accuracy on query set
-            losses, accuracies_query = self._classify_feats(
+            loss, accuracy_query = self._classify_feats(
                 images_query, 
                 labels_query, 
                 prototypes
             )
 
             # Log metrics
-            loss_batch.append(losses)
-            accuracy_support_batch.append(accuracies_support)
-            accuracy_query_batch.append(accuracies_query)
+            loss_batch.append(loss)
+            accuracy_support_batch.append(accuracy_support)
+            accuracy_query_batch.append(accuracy_query)
 
         return (
             torch.mean(torch.stack(loss_batch)),
-            np.mean(accuracy_support_batch).item(),
-            np.mean(accuracy_query_batch).item()
+            np.mean(accuracy_support_batch),
+            np.mean(accuracy_query_batch)
         )
 
 
     def train(self, train_loader, val_loader, writer):
-        """ Trains the prototypical network.
+        """ Trains the model.
 
         Args:
             train_loader (torch.utils.data.DataLoader): training data
@@ -242,6 +242,13 @@ class ProtoNet:
                 accuracy_support = np.mean(accuracies_support)
                 accuracy_query = np.mean(accuracies_query)
 
+                print(
+                    f'Validation: '
+                    f'loss: {loss:.3f}, '
+                    f'accuracy support: {accuracy_support:.3f}, '
+                    f'accuracy query: {accuracy_query:.3f}'
+                )
+
                 metric_pairs = {
                     'loss/val': loss,
                     'accuracy_support/val': accuracy_support,
@@ -260,7 +267,7 @@ class ProtoNet:
 
 
     def test(self, test_loader):
-        """ Tests the prototypical network.
+        """ Tests the algorithm.
         
         Args:
             test_loader (torch.utils.data.DataLoader): test data

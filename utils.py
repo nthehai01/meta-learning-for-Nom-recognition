@@ -3,8 +3,8 @@ import torch
 import os
 
 
-OPTIMIZER_STATE_NAME="optimizer"
-PARAMETERS_STATE_NAME="parameters"
+OPTIMIZER_STATE_NAME = "optimizer"
+PARAMETERS_STATE_NAME = "parameters"
 
 
 def load_image(file_path):
