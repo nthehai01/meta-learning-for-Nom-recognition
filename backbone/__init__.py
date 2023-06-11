@@ -1,6 +1,16 @@
-#####################################################################
-# Model backbone used for both Meta-learning and Transfer-learning. #
-#####################################################################
+######################################################################
+# Model backbone used for both Meta-learning and Transfer-learning.  #
+#                                                                    #
+# The network consists of four convolutional blocks, each comprising #
+# a convolution layer, a batch normalization layer, ReLU activation, # 
+# and 2x2 max pooling for downsampling. There is an additional       #
+# flattening operation at the end.                                   #
+#                                                                    #
+# Note that unlike conventional use, batch normalization is always   #
+# done with batch statistics, regardless of whether we are training  # 
+# or evaluating. This technically makes meta-learning transductive,  # 
+# as opposed to inductive.                                           #
+######################################################################
 
 
 import torch
@@ -18,7 +28,7 @@ PADDING = "same"
 
 class Backbone:
     @staticmethod
-    def get_network(device, num_outputs=NUM_HIDDEN_CHANNELS):
+    def get_network(num_outputs, device):
         """
         Returns initialized parameters for the network.
 
@@ -101,7 +111,7 @@ class Backbone:
             x = F.relu(x)
             x = F.max_pool2d(x, 2)
 
-        x = x.flatten(start_dim=1)
+        x = torch.mean(x, dim=[2, 3])
 
         return F.linear(
             input=x,

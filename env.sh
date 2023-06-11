@@ -1,7 +1,5 @@
 export _BASE_PATH="RawDataset"
 export _PROC_PATH="NomCharacters"
-export _CHARACTER_WIDTH_SCALED=44
-export _CHARACTER_HEIGHT_SCALED=44
 export _CHARACTER_FILE_EXTENSION="png"
 export _META_DATA_FILE_NAME="meta_data.yaml"
 
@@ -26,12 +24,15 @@ export _FINE_TUNE_TRAIN_PATH="$_FINE_TUNE_PATH/$_TRAIN_SPLIT_NAME"
 export _FINE_TUNE_VAL_PATH="$_FINE_TUNE_PATH/$_VAL_SPLIT_NAME"
 export _FINE_TUNE_TEST_PATH="$_FINE_TUNE_PATH/$_TEST_SPLIT_NAME"
 
+export _SAVE_INTERVAL=100
+export _PRINT_INTERVAL=10
+export _VAL_INTERVAL=100
+export _NUM_TEST_TASKS=600
+
 
 clearenv () {
     unset _BASE_PATH
     unset _PROC_PATH
-    unset _CHARACTER_WIDTH_SCALED
-    unset _CHARACTER_HEIGHT_SCALED
     unset _CHARACTER_FILE_EXTENSION
     unset _META_DATA_FILE_NAME
 
@@ -55,4 +56,9 @@ clearenv () {
     unset _FINE_TUNE_TRAIN_PATH
     unset _FINE_TUNE_VAL_PATH
     unset _FINE_TUNE_TEST_PATH
+
+    unset _SAVE_INTERVAL
+    unset _PRINT_INTERVAL
+    unset _VAL_INTERVAL
+    unset _NUM_TEST_TASKS
 }
