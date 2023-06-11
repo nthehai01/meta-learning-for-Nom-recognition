@@ -21,10 +21,18 @@
 #########################################################################################
 
 import os
+import sys
+
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
+
 import glob
 import numpy as np
 import shutil
 import splitfolders
+
+from utils import is_augmented_image
 
 
 DATA_PATH = os.environ['_PROC_PATH']
@@ -186,20 +194,6 @@ def clean_up(dir):
             shutil.rmtree(character_path)
 
 
-def is_augmented_image(file):
-    """ Checks if a file is an augmented image by its name.
-        A file is an augmented image if its name is of format <name>.aug.<extension>.
-        Hence, if we split the file's name by '.', 
-        the length of the list should be equal to 3.
-
-    Args:
-        file (str): the file's name.
-    """
-
-    file_name = file.split('/')[-1]
-    return len(file_name.split('.')) == 3
-
-
 def get_augmented_images(character_folder):
     """ Finds augmented images in a folder of test set.
 
@@ -336,10 +330,12 @@ def main():
 
     bigger_set, smaller_set = split_character_folders(character_folders)
     
-    # # Create data for meta-learning
-    # create_meta_dataset(bigger_set, smaller_set)
+    # Create data for meta-learning
+    print("Creating data for meta-learning...")
+    create_meta_dataset(bigger_set, smaller_set)
     
     # Create data for transfer learning
+    print("Creating data for transfer learning...")
     process_for_transfer_learning(bigger_set, smaller_set)
 
 
