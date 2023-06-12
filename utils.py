@@ -32,6 +32,7 @@ def identity(x):
     Returns:
         x (any): input
     """
+    
     return x
 
 

@@ -5,7 +5,7 @@
 #       each of which is further split into train, val, and test sets.                  #
 #                                                                                       #
 # First of all, we split the original dataset into two sets:                            #
-#   1. The bigger set contains 80% of the character folders,                            #
+#   1. The bigger set contains 80% (3,200 characters) of the character folders,         #
 #   2. The smaller set contains the rest.                                               #
 #                                                                                       #
 # The bigger set is further split into meta-training, meta-validating for meta-learning #
@@ -54,7 +54,7 @@ FINE_TUNE_TRAIN_PATH = os.environ['_FINE_TUNE_TRAIN_PATH']
 FINE_TUNE_VAL_PATH = os.environ['_FINE_TUNE_VAL_PATH']
 FINE_TUNE_TEST_PATH = os.environ['_FINE_TUNE_TEST_PATH']
 
-BIGGER_SET_RATIO = 0.8
+BIGGER_SET_CHARACTER_NUM = int(os.environ['_BIGGER_SET_CHARACTER_NUM'])
 
 META_TRAIN_RATIO = 0.8
 
@@ -100,7 +100,7 @@ def split_character_folders(character_folders):
         smaller_set (list): list of character folders.
     """
 
-    split_index = int(len(character_folders) * BIGGER_SET_RATIO)
+    split_index = BIGGER_SET_CHARACTER_NUM
     
     bigger_set = character_folders[:split_index]
     smaller_set = character_folders[split_index:]
