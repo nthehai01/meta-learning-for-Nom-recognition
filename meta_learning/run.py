@@ -34,7 +34,7 @@ def parse_arguments():
         '--method',
         type=str,
         default=None,
-        choices=["protonet", "maml", "proto_maml"],
+        choices=["protonet", "maml", "protomaml"],
         help="One of Meta-learning algorithms [protonet, maml, protomaml]"
     )
     parser.add_argument(
@@ -144,14 +144,20 @@ def determine_algorithm(args, log_dir):
         )
     elif args.method == 'maml':
         net = MAML(
-            args.output_dim, 
+            args.num_way, 
             args.num_inner_steps, 
             args.inner_lr, 
             args.outer_lr, 
             log_dir
         )
     elif args.method == 'protomaml':
-        net = ProtoMAML()
+        net = ProtoMAML(
+            args.output_dim, 
+            args.num_inner_steps, 
+            args.inner_lr, 
+            args.outer_lr, 
+            log_dir
+        )
     else:
         raise ValueError(f'Invalid method name: {args.method}')
 

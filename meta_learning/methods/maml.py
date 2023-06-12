@@ -119,27 +119,25 @@ class MAML:
             k: torch.clone(v)
             for k, v in self._network.items()
         }
+    
 
-
-    def _inner_loop(self, images_support, labels_support):
-        """ Performs an inner loop.
+    def _adapt(self, images_support, labels_support, local_parameters):
+        """ Performs adaptations in the inner loop.
 
         Args:
             images_support (torch.Tensor): support images
                 shape (num_way * num_shot, c, h, w)
             labels_support (torch.Tensor): support labels
                 shape (num_way * num_shot,)
+            local_parameters (dict[str, Tensor]): pre-adapted local parameters
         Returns:
             local_parameters (dict[str, Tensor]): adapted parameters
             accuracies_support (np.array): support set accuracy over the
                 course of the inner loop
                 shape (num_inner_steps + 1,)
         """
-
+        
         accuracies_support = []
-
-        # Initialize local parameters
-        local_parameters = self._init_local_parameters()
 
         # Perform adaptation
         for _ in range(self._num_inner_steps):
@@ -167,6 +165,34 @@ class MAML:
             local_parameters
         )
         accuracies_support.append(accuracy_support)
+
+        return local_parameters, accuracies_support
+
+
+    def _inner_loop(self, images_support, labels_support):
+        """ Performs an inner loop.
+
+        Args:
+            images_support (torch.Tensor): support images
+                shape (num_way * num_shot, c, h, w)
+            labels_support (torch.Tensor): support labels
+                shape (num_way * num_shot,)
+        Returns:
+            local_parameters (dict[str, Tensor]): adapted parameters
+            accuracies_support (np.array): support set accuracy over the
+                course of the inner loop
+                shape (num_inner_steps + 1,)
+        """
+
+        # Initialize local parameters
+        local_parameters = self._init_local_parameters()
+
+        # Perform adaptation
+        local_parameters, accuracies_support = self._adapt(
+            images_support, 
+            labels_support, 
+            local_parameters
+        )
 
         return local_parameters, accuracies_support
 
