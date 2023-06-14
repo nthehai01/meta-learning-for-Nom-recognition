@@ -26,6 +26,9 @@ TEST_SPLIT_NAME = os.environ['_TEST_SPLIT_NAME']
 
 CHARACTER_FILE_EXTENSION = os.environ['_CHARACTER_FILE_EXTENSION']
 
+PRE_TRAIN_NAME = os.environ["_PRE_TRAIN_NAME"]
+FINE_TUNE_NAME = os.environ["_FINE_TUNE_NAME"]
+
 
 def get_image_class_pairs(character_paths):
     """ Returns a list of image-class pairs.
@@ -68,7 +71,7 @@ class NomDataset(dataset.Dataset):
         file_path, class_id = data_point
         image = load_image(file_path)
 
-        return image, class_id
+        return image, int(class_id)
     
 
 class NomSampler(sampler.Sampler):
@@ -120,9 +123,9 @@ def get_nom_dataloader(phase,
     """
 
     # Determine training phase
-    if phase == 'pre-train':
+    if phase == PRE_TRAIN_NAME:
         data_dir = PRE_TRAIN_PATH
-    elif phase == 'fine-tune':
+    elif phase == FINE_TUNE_NAME:
         data_dir = FINE_TUNE_PATH
     else:
         raise ValueError('Invalid phase.')

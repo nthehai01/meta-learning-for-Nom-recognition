@@ -6,6 +6,8 @@ import os
 OPTIMIZER_STATE_NAME = "optimizer"
 PARAMETERS_STATE_NAME = "parameters"
 
+NUM_CONV_LAYERS = int(os.environ["_NUM_CONV_LAYERS"])
+
 
 def load_image(file_path):
     """Loads and transforms an Nôm character image.
@@ -114,6 +116,30 @@ def load_checkpoint(optimizer, parameters, checkpoint_step, log_dir, device="cpu
     else:
         raise ValueError(
             f'No checkpoint for iteration {checkpoint_step} found.'
+        )
+
+
+def load_pre_trained_weights(parameters, pre_trained_weights_path, device="cpu"):
+    """ Loads pre-trained weights and initialize the model for fine-tuning.
+
+    Args:
+        parameters (dict): model parameters
+        pre_trained_weights_path (str): path to pre-trained weights
+        device (str): device to load checkpoint to
+    Raises:
+        ValueError: if checkpoint for checkpoint_step is not found    
+    """
+
+    if os.path.isfile(pre_trained_weights_path):
+        state = torch.load(pre_trained_weights_path, map_location=device)
+        state[PARAMETERS_STATE_NAME].pop(f'w{NUM_CONV_LAYERS}')
+        state[PARAMETERS_STATE_NAME].pop(f'b{NUM_CONV_LAYERS}')
+        parameters.update(state[PARAMETERS_STATE_NAME])
+
+        print(f'Loaded pre-trained weights at {pre_trained_weights_path}.')
+    else:
+        raise ValueError(
+            f'No pre-trained weights found.'
         )
     
 
