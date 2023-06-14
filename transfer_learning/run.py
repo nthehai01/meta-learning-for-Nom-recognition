@@ -127,7 +127,7 @@ def main():
             phase,
             'train',
             args.batch_size,
-            args.batch_size * 100
+            args.batch_size * 10
         )
 
         net.train(dataloader_train, dataloader_val, writer)
@@ -138,7 +138,7 @@ def main():
             phase,
             'test',
             1,
-            600*5
+            600*4
         )
 
         # Perform testing
