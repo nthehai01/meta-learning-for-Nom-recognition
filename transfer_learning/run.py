@@ -127,7 +127,7 @@ def main():
             phase,
             'train',
             args.batch_size,
-            args.batch_size * 10
+            args.batch_size * 100
         )
 
         net.train(dataloader_train, dataloader_val, writer)
