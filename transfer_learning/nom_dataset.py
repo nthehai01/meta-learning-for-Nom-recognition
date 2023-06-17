@@ -141,7 +141,7 @@ def get_nom_dataloader(phase,
         raise ValueError('Invalid split.')
     
     # Get paths to character directories
-    character_paths = glob.glob(os.path.join(data_path, '*/'))
+    character_paths = sorted(glob.glob(os.path.join(data_path, '*/')))
     
     return dataloader.DataLoader(
         dataset=NomDataset(),
