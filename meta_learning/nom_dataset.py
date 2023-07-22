@@ -44,20 +44,18 @@ def swap_augmented_examples_to_front(file_paths):
 class NomDataset(dataset.Dataset):
     """ Dataset of Nôm characters."""
 
-    def __init__(self, num_shot, max_num_query, is_test=False):
+    def __init__(self, num_shot, max_num_query):
         """Initializes a NomDataset.
 
         Args:
             num_shot (int): number of examples per class in the support set
             max_num_query (int): maximum number of examples per class in the
                 query set
-            is_test (bool): whether the dataset is for testing
         """
 
         super().__init__()
         self._num_shot = num_shot
         self._max_num_query = max_num_query
-        self._is_test = is_test
 
 
     def __getitem__(self, sampled_character_paths):
@@ -80,7 +78,7 @@ class NomDataset(dataset.Dataset):
         images_support, images_query = [], []
         labels_support, labels_query = [], []
 
-        np.random.seed(42 if self._is_test else None)
+        np.random.seed(42)
 
         for label, character_path in enumerate(sampled_character_paths):
             # Get a class's examples
@@ -194,10 +192,8 @@ def get_nom_dataloader(split,
     
     character_paths = glob.glob(os.path.join(data_path, '*/'))
 
-    is_test = split == 'test'
-    
     return dataloader.DataLoader(
-        dataset=NomDataset(num_shot, max_num_query, is_test),
+        dataset=NomDataset(num_shot, max_num_query),
         batch_size=batch_size,
         sampler=NomSampler(character_paths, num_way, num_tasks),
         num_workers=2,
