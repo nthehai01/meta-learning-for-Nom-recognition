@@ -143,15 +143,13 @@ class NomSampler(sampler.Sampler):
         """
 
         np.random.seed(42)
-        iterator = [
+        return (
             np.random.choice(
                 self._character_paths,
                 size=self._num_way,
                 replace=False
             ) for _ in range(self._num_tasks)
-        ]
-
-        return iterator
+        )
     
 
     def __len__(self):
