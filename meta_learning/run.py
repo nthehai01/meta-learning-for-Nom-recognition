@@ -70,7 +70,7 @@ def parse_arguments():
     parser.add_argument(
         '--num_train_iterations',
         type=int,
-        default=10001,
+        default=1001,
         help='Number of updates to train for'
     )
     parser.add_argument(
