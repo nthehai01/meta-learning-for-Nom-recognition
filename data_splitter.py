@@ -334,9 +334,9 @@ def main():
     print("Creating data for meta-learning...")
     create_meta_dataset(bigger_set, smaller_set)
     
-    # Create data for transfer learning
-    print("Creating data for transfer learning...")
-    process_for_transfer_learning(bigger_set, smaller_set)
+    # # Create data for transfer learning
+    # print("Creating data for transfer learning...")
+    # process_for_transfer_learning(bigger_set, smaller_set)
 
 
 if __name__ == '__main__':
