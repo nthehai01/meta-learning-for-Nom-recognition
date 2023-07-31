@@ -24,6 +24,8 @@ python convert_data.py
 python data_splitter.py
 ```
 
+*The resulting dataset is provided [here](https://www.kaggle.com/datasets/nguynthhi/nom-dataset-for-meta-learning).*
+
 ## Training and evaluating meta-learning algorithms
 
 We need to define the following hyperparameters before starting training:
